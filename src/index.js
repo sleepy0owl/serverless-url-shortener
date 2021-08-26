@@ -1,14 +1,27 @@
 const aws = require('aws-cdk');
 aws.config.update({region:"us-east-1"})
+
+function makeid(length) {
+    var result           = '';
+    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for ( var i = 0; i < length; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * 
+ charactersLength));
+   }
+   return result;
+}
+
 async function create_shorturl(body, domain, path){
     let result = {};
     try {
         const dynamodb = new aws.Dynamodb.DocumentClient()
+        let shortid = makeid(8);
         let putparam = {
             Tablename: process.env.TABLE_NAME,
             Item: {
-                "id": '',
-                "long_url": ''
+                "id": shortid,
+                "long_url": body.url
             }
         };
         let putresult = await dynamodb.put(putparam).promise();
