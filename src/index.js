@@ -1,4 +1,4 @@
-const aws = require('aws-cdk');
+const aws = require('aws-sdk');
 aws.config.update({region:"us-east-1"})
 
 function makeid(length) {
@@ -6,8 +6,7 @@ function makeid(length) {
     var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     var charactersLength = characters.length;
     for ( var i = 0; i < length; i++ ) {
-      result += characters.charAt(Math.floor(Math.random() * 
- charactersLength));
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
    }
    return result;
 }
@@ -15,10 +14,11 @@ function makeid(length) {
 async function create_shorturl(body, domain, path){
     let result = {};
     try {
-        const dynamodb = new aws.Dynamodb.DocumentClient()
+        const dynamodb = new aws.DynamoDB.DocumentClient();
         let shortid = makeid(8);
+        console.log('body : ', body);
         let putparam = {
-            Tablename: process.env.TABLE_NAME,
+            TableName: process.env.TABLE_NAME,
             Item: {
                 "id": shortid,
                 "long_url": body.url
@@ -26,7 +26,7 @@ async function create_shorturl(body, domain, path){
         };
         let putresult = await dynamodb.put(putparam).promise();
         console.log(putresult);
-        let shorturl = `https://${domain}/${path}/${shortid}`;
+        let shorturl = `https://${domain}${path}${shortid}`;
         result = {
             success: true,
             shorturl: shorturl
@@ -44,30 +44,31 @@ async function create_shorturl(body, domain, path){
 async function retrieve_long_url(param) {
     let result = {};
     try {
-        const dynamodb = new aws.Dynamodb.DocumentClient();
+        const dynamodb = new aws.DynamoDB.DocumentClient();
         let getparam = {
-            Tablename: process.env.TABLE_NAME,
+            TableName: process.env.TABLE_NAME,
             Key:{
                 id: param
             }
         };
         let getresult = await dynamodb.get(getparam).promise();
-        console.log(getresult);
+        console.log('get result : ',getresult);
         result = {
             success: true,
-            longurl: getresult['long_url']
-        }
+            longurl: getresult.Item.long_url
+        };
     } catch (error) {
         console.error(error);
         result = {
             success: false,
             message: 'something went wrong'
-        }
+        };
     }
+    return result;
 }
 
 module.exports.handler = async (event, context) => {
-    let operation = event.requestContext.http.method;
+    let operation = event.requestContext.httpMethod;
     let domain = event.requestContext.domainName;
     let path = event.requestContext.path;
     console.log('operation : ', operation);
@@ -75,12 +76,13 @@ module.exports.handler = async (event, context) => {
     console.log('path : ', path);
     try {
         if (operation === 'POST') {
-            let body = JSON.parse(event.body);
-            let result = await create_shorturl(body, domain, path);
+            let reqbody = JSON.parse(event.body);
+            let result = await create_shorturl(reqbody, domain, path);
+            console.log('create short url result : ',result);
             if (result.success) {
                 return {
                     statusCode : 200,
-                    shorturl: result.shorturl
+                    body: JSON.stringify({"shorturl": result.shorturl})
                 }
             } else {
                 return {
@@ -91,6 +93,7 @@ module.exports.handler = async (event, context) => {
         }else if (operation === 'GET'){
             let param = event.pathParameters.short_id
             let result = await retrieve_long_url(param);
+            console.log(result);
             if (result.success) {
                 return {
                     statusCode: 301,
