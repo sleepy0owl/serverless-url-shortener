@@ -26,7 +26,7 @@ async function create_shorturl(body, domain, path){
         };
         let putresult = await dynamodb.put(putparam).promise();
         console.log(putresult);
-        let shorturl = `https://${domain}/${path}/${id}`;
+        let shorturl = `https://${domain}/${path}/${shortid}`;
         result = {
             success: true,
             shorturl: shorturl
