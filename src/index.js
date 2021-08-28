@@ -1,6 +1,12 @@
 const aws = require('aws-sdk');
 aws.config.update({region:"us-east-1"})
 
+/**
+ * Creates a uid of a certain length
+ * COPIED from SO
+ * @param {Number} length 
+ * @returns n characts long alpha-numeric string
+ */
 function makeid(length) {
     var result           = '';
     var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -11,6 +17,14 @@ function makeid(length) {
    return result;
 }
 
+/**
+ * Creates a short url from body object
+ * 
+ * @param {Object} body 
+ * @param {string} domain 
+ * @param {path} path 
+ * @returns Object with success and short url 
+ */
 async function create_shorturl(body, domain, path){
     let result = {};
     try {
@@ -41,6 +55,12 @@ async function create_shorturl(body, domain, path){
     return result
 }
 
+/**
+ * Gets the original long url
+ * 
+ * @param {string} param 
+ * @returns Object with success and long/original url
+ */
 async function retrieve_long_url(param) {
     let result = {};
     try {
